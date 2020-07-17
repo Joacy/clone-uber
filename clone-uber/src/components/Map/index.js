@@ -3,8 +3,12 @@ import MapView from 'react-native-maps';
 import { StyleSheet, View, Dimensions } from 'react-native';
 import * as Location from 'expo-location';
 
+import Search from '../Search';
+import Directions from '../Directions';
+
 const Map = () => {
     const [initialPosition, setInicialPosition] = useState([0, 0]);
+    const [destination, setDestination] = useState();
 
     async function loadPosition () {
         const { status } = await Location.requestPermissionsAsync();
@@ -16,13 +20,25 @@ const Map = () => {
         const location = await Location.getCurrentPositionAsync();
 
         const { latitude, longitude } = location.coords;
-        
+
         setInicialPosition([latitude, longitude]);
     }
 
     useEffect(() => {
         loadPosition();
     }, []);
+
+    function handleLocationSelected (data, { geometry }) {
+        const { location: { lat: latitude, lng: longitude } } = geometry;
+
+        setDestination({
+            destination: {
+                latitude,
+                logitude,
+                title: data.structured_formatting.main_text,
+            }
+        });
+    }
 
     return (
         <View style={styles.container}>
@@ -36,7 +52,19 @@ const Map = () => {
                 }}
                 showsUserLocation
                 loadingEnabled
-            />
+            >
+                {destination && (
+                    <Directions
+                        origin={initialPosition}
+                        destination={destination}
+                        onReady={() => {
+
+                        }}
+                    />
+                )}
+            </MapView>
+
+            <Search onLocationSelected={handleLocationSelected} />
         </View>
     );
 }
@@ -46,13 +74,9 @@ export default Map;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center',
     },
 
     mapStyle: {
-        width: Dimensions.get('window').width,
-        height: Dimensions.get('window').height,
+        flex: 1,
     },
 });
