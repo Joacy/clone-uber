@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import MapView from 'react-native-maps';
-import { StyleSheet, View, Dimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import * as Location from 'expo-location';
+
+import { getPixelSize } from '../../utils';
 
 import Search from '../Search';
 import Directions from '../Directions';
@@ -52,13 +54,21 @@ const Map = () => {
                 }}
                 showsUserLocation
                 loadingEnabled
+                ref={el => this.mapView = el}
             >
                 {destination && (
                     <Directions
                         origin={initialPosition}
                         destination={destination}
-                        onReady={() => {
-
+                        onReady={result => {
+                            this.mapView.fitToCoordinates(result.coordinates, {
+                                edgePadding: {
+                                    right: getPixelSize(50),
+                                    left: getPixelSize(50),
+                                    top: getPixelSize(50),
+                                    bottom: getPixelSize(50),
+                                }
+                            });
                         }}
                     />
                 )}
