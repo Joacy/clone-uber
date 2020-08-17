@@ -2,25 +2,33 @@ import React, { useState, useEffect, Fragment } from 'react';
 import MapView, { Marker } from 'react-native-maps';
 import { StyleSheet, View } from 'react-native';
 import * as Location from 'expo-location';
+import Geocoder from 'react-native-geocoding';
 
 import { getPixelSize } from '../../utils';
 
 import Search from '../Search';
 import Directions from '../Directions';
+import Details from '../Details';
 
 import markerImage from '../../assets/marker.png';
+import backImage from "../../assets/back.png";
 
 import {
+    Back,
     LocationBox,
     LocationText,
     LocationTimeBox,
     LocationTimeText,
-    LocationTimeTextSmall,
-} from 'styles';
+    LocationTimeTextSmall
+} from "./styles";
+
+Geocoder.init('AIzaSyB1O8amubeMkw_7ok2jUhtVj9IkME9K8sc');
 
 const Map = () => {
     const [initialPosition, setInicialPosition] = useState([0, 0]);
     const [destination, setDestination] = useState();
+    const [duration, setDuration] = useState();
+    const [location, setLocation] = useState();
 
     async function loadPosition () {
         const { status } = await Location.requestPermissionsAsync();
@@ -33,6 +41,11 @@ const Map = () => {
 
         const { latitude, longitude } = location.coords;
 
+        const response = await Geocoder.from({ latitude, longitude });
+        const address = response.results[0].formatted_address;
+        const loc = address.substring(0, address.indexOf(','));
+
+        setLocation(loc);
         setInicialPosition([latitude, longitude]);
     }
 
@@ -51,6 +64,10 @@ const Map = () => {
             }
         });
     }
+
+    function handleBack () {
+        setDestination(null);
+    };
 
     return (
         <View style={styles.container}>
@@ -72,12 +89,14 @@ const Map = () => {
                             origin={initialPosition}
                             destination={destination}
                             onReady={result => {
+                                setDuration(Math.floor(result.duration));
+
                                 this.mapView.fitToCoordinates(result.coordinates, {
                                     edgePadding: {
                                         right: getPixelSize(50),
                                         left: getPixelSize(50),
                                         top: getPixelSize(50),
-                                        bottom: getPixelSize(50),
+                                        bottom: getPixelSize(350),
                                     }
                                 });
                             }}
@@ -102,7 +121,7 @@ const Map = () => {
                             <LocationBox>
                                 <LocationTimeBox>
                                     <LocationTimeText>
-                                        31
+                                        {duration}
                                     </LocationTimeText>
                                     <LocationTimeTextSmall>
                                         MIN
@@ -110,7 +129,7 @@ const Map = () => {
                                 </LocationTimeBox>
 
                                 <LocationText>
-                                    Local atual
+                                    {location}
                                 </LocationText>
                             </LocationBox>
                         </Marker>
@@ -118,7 +137,16 @@ const Map = () => {
                 )}
             </MapView>
 
-            <Search onLocationSelected={handleLocationSelected} />
+            {destination ? (
+                <Fragment>
+                    <Back onPress={handleBack}>
+                        <Image source={backImage} />
+                    </Back>
+                    <Details />
+                </Fragment>
+            ) : (
+                    <Search onLocationSelected={handleLocationSelected} />
+                )}
         </View>
     );
 }
